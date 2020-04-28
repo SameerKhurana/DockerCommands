@@ -1,0 +1,386 @@
+docker commands
+
+docker run
+//run an container from an image
+// Eg docker run nginx, if image is not present it will pull the image
+
+
+docker ps
+// List all running containers and some info
+
+
+docker ps -a
+// To check all containers are running or not
+// Will return all running and previously stopped or executed containers
+
+docker stop container_id/ container_name
+//on success will return continer_name
+
+docker rm container_id / container_name
+//on success will return continer_name
+
+docker images
+// List images
+
+docker rmi image_name
+// Remove images
+// Have to stop and delete all conatiners
+
+docker pull image_name
+// download an image
+
+Container only lives long till the process inside it is alive
+if the web service inside continer is stopped or crashed then the container exits
+
+Since the docker run ubuntu command is simply running a container of an os with no service the the command will exit
+
+docker run ubuntu sleep 5
+//Exceute a command when we run a container
+
+
+//Execute a command on a running container
+
+// Print the contents of etc/hosts file
+docker exec distracted_mcclintock cat /etc/hosts/
+
+Run-attach and detach
+
+docker run kodekloud/simple-webapp
+
+when we run a docker run command it runs in foreground or in attach mode  ie attached to console or stdout, will only be able to see output
+until container stops, not respond to input
+
+For detach mode -d flag , backgound mode
+
+docker run -d  kodekloud/simple-webapp
+
+If want to attack back to running container later
+
+docker attach container_id / container_name
+
+
+--------------------------------------------
+
+Run - tag
+
+docker run image:tag
+// to download a specific version
+// If tag not mentioned latest version is downloaded 
+
+Run - stdin
+
+docker run kodekloud/simple-prompt-docker
+//By default docker does not listen to a standard input
+// Runs in non-interactive mode
+
+// For interactive mode
+
+docker run -i kodekloud/simple-prompt-docker
+// Prompt is still missing beacuse prompt is attcahed to terminal
+
+// Pseudo terminal and interactive mode
+//-t flag
+docker run -it kodekloud/simple-prompt-docker
+
+
+Run - PORT mapping/publishing on containers
+
+docker run kodekloud/webapp
+
+//underlying host on which on docker is host is called dcoker host or docker engine
+
+Running on http://0.0.0.0:5000/
+// Application is listening port 5000
+
+// What ip should we use?
+
+Either 1) use ip of docker container here 172.17.0.2 
+but this an internal ip and only accessible within the docker host  
+
+2) We can use IP of the docker host 192.168.1.5
+ but to use that we must have mapped port(80) inside docker container to a free port on the docker host
+
+ docker run -p 80:5000 kodekloud/simple-webapp
+
+ http://192.168.1.5:80
+
+ RUN - Volume mapping
+
+ docker run mysql
+
+ // when db and tables are created the data is stored in  /var/lib/mysql
+
+// Each docker has its own isolated file system and any changes within the files happen within the contianer
+
+// When container is stopped and removed all the data is lost
+// If we want to persist data  we need to map a directory outside a container on the docker host to a directory inside the host
+
+docker run -v /opt/datadir:/var/lib/mysql mysql
+
+
+Inspect Container
+
+docker inspect container_name / container_id
+
+// docker inspect blissfull_hopper
+// Returns all container info in json format 
+
+Container logs
+
+docker logs container_name / container_id
+
+--------------------------------------------------------
+
+Environment Variables
+
+//Pass environment variable
+docker run -e APP_COLOR=blue simple-webapp-color
+
+
+Inspect environment variable 
+
+docker inspect blissfull_hopper
+
+// Under config section, we can find list of environment variables set on the container
+
+
+----------------------------------------------------------
+
+
+Docker Images
+
+How to create your own image?
+
+Why do we need to create own image?
+
+What am I containerizing?
+
+// Webapp build using python Flask framework
+
+Steps:
+
+1. Os-Ubuntu
+2. Upadte apt repo
+3. Install depndencies using apt
+4. Install python dependencies using pip
+5. Copy source code to /opt folder
+6. Run the web server using flask command
+
+// Create a Dockerfile and write the steps for setting up your application 
+
+/* Contents of smaple Dockerfile
+
+FROM Ubuntu
+
+RUN apt-get update
+RUN apt-get install python
+
+RUN pip install flask
+RUN pip install flask-mysql
+
+COPY . /opt/source-code
+
+ENTRYPOINT FLASK_APP=/opt/source-code/app.py flask run
+
+*/ 
+
+// Build your image using docker build and specify the dockerfile as input as well as tag name (-t) for the image
+
+//docker build Dockerfile -t mmumshad/my-custom-app
+
+docker build -t mmumshad/my-custom-app . //. tells the context of the docker file
+
+// This will create an image on local system
+// To  make it availbale on docker hub registry run push cmd
+
+docker push  mmumshad/my-custom-app
+
+
+Format for Dockerfile
+
+INSTRUCTION ARGUMENT
+
+// FROM Ubuntu define the base OS for this container
+// Every docker image must be based of some other docker image
+// All docker files must start with 'from' instruction 
+
+// The RUN instruction  instructs docker to run a particular command on those base images
+
+// Copy src code
+
+// Specify entrypoint allows to specify a command that will be run when the image is run as a container
+
+
+
+Layered architecture
+
+Layer 1 Base os
+
+Layer 2 Chnages in apt packages
+
+Layer 3 Changes in pip packages
+
+Layer 4 Source code
+
+Layer 5 Update Entrypoint with "flask" command
+
+// To see the details (size) of each layer  
+docker history image_name
+
+// When we run the docker build command we could see various steps an d result of each task
+
+// All layer builds are cached so layered arch restart docker build from that particular step
+
+// failure
+
+//If any layer fails it will reuse the previous layer  from cache
+and continue to build remaining layers
+
+
+// If we add more remaining steps, the image is build faster beacuse of the cache
+
+What can you containerize?
+
+//We can containerize almost all of the applications like browsers, utilities like curl, applications like spotify
+
+Containerize everyting
+------------------------------------------------------
+Good Questions:
+
+docker run python:3.6 cat /etc/*release*
+
+// Modify the Dockerfile bith base as lower size of python:3.6
+ie python:3.6-alpine
+docker build -t webapp-color .
+
+------------------------------------------------------
+
+Command and Entrypoint
+
+
+//Instruction CMD  that defines the program that will be run within the container when it starts
+
+docker run image_name [COMMAND]
+
+docker run ubuntu sleep 5
+
+For running the sleep commmand always,
+ create an Dockerfile base on ubuntu
+/*
+ FROM Ubuntu
+
+ CMD sleep 5
+*/
+
+
+CMD command param1 -> CMD sleep 5
+
+
+CMD ["command" ,"param1"] -> CMD["sleep","5"]
+
+
+docker build -t ubuntu-sleeper .
+
+docker run ubuntu-sleeper
+
+// For changing the time
+
+docker run ubuntu-sleeper sleep 10
+
+// But if want something like below
+
+docker run ubuntu-sleeper 10
+
+that's where ENTRYPOINT instrn comes to play
+
+
+/*
+ FROM Ubuntu
+
+  ENTRYPOINT["sleep"]
+*/
+
+ ENTRYPOINT inst is like CMD inst as you can specify the prog you can run when container starts
+
+
+Whatever you apply at cmd line , will append at the entrypoint
+In cmd instrn, the command line parameters passed will get  relaced entirely.
+
+For default value,
+
+
+/*
+ FROM Ubuntu
+
+  ENTRYPOINT["sleep"]
+
+  CMD["5"]
+*/
+
+// You have specify both ENTRYPOINT and CMD in json format
+
+// Modify entrypoint at runtime
+// Using --entrypoint option
+
+docker run --entrypoint sleep2.0 ubuntu-sleeper 10
+
+--------------------------------------------------------
+
+
+Docker Networking 
+
+When you install docker it creates 3 networks automatically:
+
+1. Bridge
+2. none
+3. host
+
+Bridge is the default network that the container gets attcahed to.
+
+If you want to associate container with any other network, specify the network information using network cmd line pararmeter.
+
+
+docker run ubuntu --network=none
+
+docker run ubuntu --network=host
+
+
+//The bridge is private internal network created by docker on the host
+All containers attached to it by default and they get internal IP addresses usually 172.17 series.
+
+//The containers can access eavh other via this inernal IP
+
+//One way for accessing network IP externally is via port maping to host.
+
+//Other way is to assoctiate container to host netowrk.
+This takes out any network isolation between docker host and container. No port mapping. Then We can't run multiple containers on the same host.
+
+
+//With none network, containers are not attached to any networks.
+They run in an isolated network.
+
+User-defined networks
+
+What if we want to isolate the netowrk containers on the docker host?
+
+Eg 2 containers on network 172 and  2 containers on network 182
+
+docker network create \
+--driver bridge \
+--subnet 182.18.0.0/16
+custom-isolated-network
+
+// to list all the networks
+
+docker network ls
+
+// How to see network settings  and IP addr assigned to container
+
+docker inspect container_name/container_id
+// under Networks section
+
+Embedded DNS
+
+//Containers can access each other via names
+
+

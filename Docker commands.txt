@@ -348,7 +348,7 @@ docker run ubuntu --network=host
 //The bridge is private internal network created by docker on the host
 All containers attached to it by default and they get internal IP addresses usually 172.17 series.
 
-//The containers can access eavh other via this inernal IP
+//The containers can access each other via this internal IP
 
 //One way for accessing network IP externally is via port maping to host.
 

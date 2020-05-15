@@ -1,0 +1,41 @@
+Docker Storage
+
+storage drivers and file system
+
+How docker stores data and manage file systems?
+
+File System
+
+/var/lib/docker
+	aufs
+	containers
+	image
+	volumes
+
+This is where docker stores all its data by default.
+//data: files related to images and contianers running on the docker host. 
+
+// Images are readonly and can be edited only by new build.
+
+Docker creates a container based of these layers and creates a new writable layer  on top of image layer.
+
+The writable layer is used to create data on the conatiner such as logs files, any temp files or file modified by user.
+
+
+Life of writeable layer same as life of contaianer.
+
+Same image layer is shared by multiple containers. 
+
+
+We can still modify the file (code) in image layer (read only)
+but before the saving the modified file , docker creates a copy in read write layer then we would be modifying a different version of file in read write layer.
+
+All the future modifications will be done on this copy of file in read write layer.
+
+this is called COPY ON WRITE meachanism.
+
+This modified data will be lost when we build the image again.
+
+How to persist this data?
+
+Add persistent volumes to the container.  
